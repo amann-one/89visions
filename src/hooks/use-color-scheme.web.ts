@@ -1,23 +1,8 @@
 import { useSyncExternalStore } from 'react';
-import { useColorScheme as useRNColorScheme } from 'react-native';
 
-const subscribe = () => () => {};
+import { getScheme, subscribeScheme, type Scheme } from '@/lib/color-scheme-store';
 
-/**
- * To support static rendering, this value needs to be re-calculated on the client side for web
- */
-export function useColorScheme() {
-  const hasHydrated = useSyncExternalStore(
-    subscribe,
-    () => true,
-    () => false
-  );
-
-  const colorScheme = useRNColorScheme();
-
-  if (hasHydrated) {
-    return colorScheme;
-  }
-
-  return 'light';
+/** Static rendering always starts light; the client picks up the stored choice. */
+export function useColorScheme(): Scheme {
+  return useSyncExternalStore(subscribeScheme, getScheme, () => 'light');
 }

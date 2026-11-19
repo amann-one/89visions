@@ -20,6 +20,7 @@ import { HeroCard } from '@/components/bucket/hero-card';
 import { InlineError } from '@/components/bucket/inline-error';
 import { ItemCard } from '@/components/bucket/item-card';
 import { ThemedText } from '@/components/themed-text';
+import { ThemeToggle } from '@/components/theme-toggle';
 import { PoweredBy } from '@/components/powered-by';
 import { Gradient } from '@/components/ui/gradient';
 import { Screen } from '@/components/ui/screen';
@@ -152,6 +153,7 @@ export default function BucketListScreen() {
           ]}>
           <ThemedText style={[styles.addIcon, { color: theme.accent }]}>＋</ThemedText>
         </Pressable>
+        <ThemeToggle />
       </View>
 
       <HeroCard
@@ -323,6 +325,7 @@ const styles = StyleSheet.create({
     letterSpacing: -1,
   },
   addButton: {
+    marginRight: Spacing.two,
     width: 44,
     height: 44,
     borderRadius: 22,
