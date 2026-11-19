@@ -33,8 +33,8 @@ Ohne ausgefüllte `.env` zeigt die App einen Einrichtungs-Screen mit den nächst
 1. Projekt auf [supabase.com](https://supabase.com) anlegen.
 2. Im **SQL Editor** den kompletten Inhalt von [`supabase/schema.sql`](supabase/schema.sql) ausführen. Das legt an:
    - die Tabellen `items` und `photos` (inkl. Indizes, Constraints, Cascade-Delete)
-   - Row Level Security mit offenen Policies für den `anon` Key
-   - den öffentlichen Storage-Bucket `bucket-list` samt Lese-, Upload-, Update- und Delete-Policies
+   - Row Level Security (Ausgangsbasis) und den öffentlichen Storage-Bucket `bucket-list`
+   Danach den Inhalt von [`supabase/migration-multi-user.sql`](supabase/migration-multi-user.sql) ausführen: Das macht aus der App eine Multi-User-App (siehe unten).
 3. Unter **Project Settings → API** die **Project URL** und den **anon public Key** kopieren.
 4. `.env` ausfüllen:
 
@@ -50,18 +50,17 @@ EXPO_PUBLIC_SUPABASE_BUCKET=bucket-list
 
 - `items` – ein Ziel pro Zeile (Titel, Notiz, Kategorie, Status, Zieltermin, Ort, Budget, Bewertung, Favorit, `deleted_at` für Soft-Delete).
 - `photos` – ein Foto pro Zeile mit öffentlicher URL, Thumbnail-URL, Storage-Pfad und Maßen.
-- Storage – jedes Foto liegt als `<itemId>/<uuid>.jpg` plus `<itemId>/<uuid>-thumb.jpg`. In der Datenbank stehen nur URLs und Pfade, nie Bild-Binärdaten.
+- Storage – jedes Foto liegt als `<userId>/<itemId>/<uuid>.jpg` plus `-thumb.jpg`. In der Datenbank stehen nur URLs und Pfade, nie Bild-Binärdaten.
 
-### Sicherheit
+### Konten und Sicherheit
 
-Der `anon` Key ist öffentlich – er steckt im App-Bundle. Die Policies in `schema.sql` sind deshalb bewusst offen (`using (true)`), damit die App ohne Login funktioniert. Das ist **nur für eine persönliche Single-User-App** vertretbar.
+Jede Person registriert sich mit E-Mail und Passwort und hat ihre eigene, private Bucket List.
 
-Sobald mehrere Personen die App nutzen sollen:
-
-1. Supabase Auth aktivieren und in der App anmelden (Sessions sind im Client bereits vorbereitet, aktuell aber deaktiviert).
-2. `user_id uuid not null default auth.uid()` zu `items` und `photos` hinzufügen.
-3. Policies auf `user_id = auth.uid()` umstellen.
-4. Für Uploads alternativ signierte URLs aus einer Edge Function ausstellen, damit der Bucket nicht offen beschreibbar ist.
+- `items` und `photos` haben eine Spalte `user_id` (Standard `auth.uid()`). Row Level Security erlaubt nur Zugriff auf eigene Zeilen.
+- Storage-Uploads, -Änderungen und -Löschungen sind nur im eigenen Ordner `<userId>/…` erlaubt. Lesen ist öffentlich (die URLs sind nicht erratbar).
+- Vorhandene Einträge aus der Zeit vor den Konten gehören dem ersten Konto, das sich registriert.
+- In Supabase unter **Authentication → Providers → Email** lässt sich die E-Mail-Bestätigung ein- oder ausschalten. Bei eingeschalteter Bestätigung muss jede neue Person erst den Link in der Mail öffnen.
+- Für die Web-Version unter **Authentication → URL Configuration** die Adresse der gehosteten App als Site URL eintragen.
 
 ## Projektstruktur
 
@@ -89,6 +88,7 @@ src/
     format.ts             Datum, Countdown, Euro
 supabase/
   schema.sql              Tabellen, RLS, Bucket + Policies
+  migration-multi-user.sql  Konten: user_id, Policies pro Nutzer, Storage-Schutz
 ```
 
 ## Bewusste Entscheidungen

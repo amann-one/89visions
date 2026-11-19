@@ -1,6 +1,8 @@
 import 'react-native-url-polyfill/auto';
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
+import { Platform } from 'react-native';
 
 function readEnv(value: string | undefined): string {
   return value?.trim() ?? '';
@@ -14,22 +16,25 @@ export const supabaseConfig = {
 
 export const isSupabaseConfigured = Boolean(supabaseConfig.url && supabaseConfig.anonKey);
 
+// During static rendering on the web there is no window; keep storage off there.
+const canPersist = Platform.OS !== 'web' || typeof window !== 'undefined';
+
 /**
- * A single shared client for database and storage.
+ * A single shared client for auth, database and storage.
  *
- * There is no auth flow yet, so sessions are disabled and every request runs
- * with the public anon key. That is why the RLS policies in
- * `supabase/schema.sql` are intentionally permissive – fine for a personal
- * list, not for a multi-tenant app.
+ * Every user signs in with e-mail and password. The session is persisted and
+ * refreshed automatically, and the RLS policies in `supabase/schema.sql`
+ * restrict every row and file to its owner.
  */
 export const supabase = createClient(
   supabaseConfig.url || 'https://placeholder.supabase.co',
   supabaseConfig.anonKey || 'public-anon-key',
   {
     auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-      detectSessionInUrl: false,
+      storage: canPersist ? AsyncStorage : undefined,
+      persistSession: canPersist,
+      autoRefreshToken: true,
+      detectSessionInUrl: Platform.OS === 'web' && canPersist,
     },
   }
 );

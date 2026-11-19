@@ -47,10 +47,10 @@ create index if not exists photos_item_id_idx    on public.photos (item_id, crea
 -- ---------------------------------------------------------------------------
 -- 2. Row Level Security
 --
--- ACHTUNG: Die App hat noch keine Anmeldung. Der anon Key steckt im App-Bundle,
--- deshalb sind die Policies absichtlich offen – das ist nur für eine persönliche,
--- nicht öffentlich beworbene App vertretbar. Sobald mehrere Personen die App
--- nutzen, Auth (supabase.auth) + user_id-Spalten + engere Policies ergänzen.
+-- ACHTUNG: Diese Policies sind absichtlich offen und nur die Ausgangsbasis.
+-- Die App nutzt Anmeldung pro Nutzer: Führe direkt danach
+-- supabase/migration-multi-user.sql aus. Sie ergänzt user_id-Spalten, ersetzt
+-- die offenen Policies durch "nur eigene Daten" und sichert den Storage ab.
 -- ---------------------------------------------------------------------------
 
 alter table public.items  enable row level security;

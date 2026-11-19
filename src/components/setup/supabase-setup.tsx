@@ -9,7 +9,7 @@ import { supabaseConfig } from '@/lib/supabase';
 
 const STEPS = [
   'Lege in Supabase ein Projekt an.',
-  'Führe das SQL aus supabase/schema.sql im SQL-Editor aus (Tabelle, Bucket und Policies).',
+  'Führe das SQL aus supabase/schema.sql und danach supabase/migration-multi-user.sql im SQL-Editor aus (Tabellen, Bucket, Nutzer-Policies).',
   'Kopiere Project URL und anon Key unter Project Settings → API in die Datei .env.',
   'Starte den Dev-Server neu (npm start).',
 ];

@@ -65,7 +65,14 @@ export async function uploadItemPhoto(
   const full = await resize(localUri, 1600, 0.82);
   const thumb = await resize(full.uri, 480, 0.7);
 
-  const key = `${itemId}/${randomUUID()}`;
+  const { data: sessionData } = await supabase.auth.getSession();
+  const userId = sessionData.session?.user.id;
+  if (!userId) {
+    throw new Error('Bitte melde dich an, um Bilder hochzuladen.');
+  }
+
+  // Storage policies only allow writing below the user's own id.
+  const key = `${userId}/${itemId}/${randomUUID()}`;
   const url = await uploadObject(`${key}.jpg`, full.uri);
   const thumbUrl = await uploadObject(`${key}-thumb.jpg`, thumb.uri);
 

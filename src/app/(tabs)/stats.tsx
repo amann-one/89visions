@@ -3,7 +3,7 @@ import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 
 import { EmptyState } from '@/components/bucket/empty-state';
 import { InlineError } from '@/components/bucket/inline-error';
-import { PoweredBy } from '@/components/powered-by';
+import { AccountFooter } from '@/components/account-footer';
 import { ThemedText } from '@/components/themed-text';
 import { Gradient } from '@/components/ui/gradient';
 import { Screen } from '@/components/ui/screen';
@@ -45,6 +45,9 @@ export default function StatsScreen() {
               onAction={() => router.push('/edit')}
             />
           )}
+          <View style={styles.footer}>
+            <AccountFooter />
+          </View>
         </ScrollView>
       </Screen>
     );
@@ -179,7 +182,7 @@ export default function StatsScreen() {
           <ThemedText type="small" themeColor="textSecondary">
             Weiter so – jedes Ziel zählt. ✨
           </ThemedText>
-          <PoweredBy />
+          <AccountFooter />
         </View>
       </ScrollView>
     </Screen>
