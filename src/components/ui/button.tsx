@@ -1,7 +1,8 @@
 import { ActivityIndicator, Pressable, StyleSheet, type ViewStyle } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { Radius, Spacing } from '@/constants/theme';
+import { Gradient } from '@/components/ui/gradient';
+import { Elevation, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
@@ -54,10 +55,21 @@ export function Button({
           backgroundColor: background,
           borderColor: variant === 'secondary' ? theme.border : 'transparent',
           borderWidth: variant === 'secondary' ? StyleSheet.hairlineWidth : 0,
-          opacity: isDisabled ? 0.5 : pressed ? 0.8 : 1,
+          opacity: isDisabled ? 0.5 : pressed ? 0.86 : 1,
+          transform: [{ scale: pressed && !isDisabled ? 0.98 : 1 }],
+          shadowColor: theme.accent,
         },
+        variant === 'primary' && Elevation.floating,
         style,
       ]}>
+      {variant === 'primary' && (
+        <Gradient
+          variant="sunset"
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
+      )}
       {loading ? (
         <ActivityIndicator color={foreground} />
       ) : (
@@ -69,14 +81,16 @@ export function Button({
 
 const styles = StyleSheet.create({
   button: {
-    minHeight: 50,
+    minHeight: 54,
     borderRadius: Radius.lg,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: Spacing.four,
+    overflow: 'hidden',
   },
   label: {
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: '800',
+    letterSpacing: 0.1,
   },
 });

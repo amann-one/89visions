@@ -1,9 +1,10 @@
-import { ScrollView, StyleSheet, Pressable } from 'react-native';
+import { ScrollView, StyleSheet, Pressable, View } from 'react-native';
 
+import { ThemedText } from '@/components/themed-text';
 import { Radius } from '@/constants/theme';
+import { useCategoryTone } from '@/hooks/use-design';
 import { useTheme } from '@/hooks/use-theme';
 import { CATEGORIES, type CategoryId } from '@/lib/models';
-import { ThemedText } from '@/components/themed-text';
 
 interface CategoryChipsProps {
   value: CategoryId | null;
@@ -12,7 +13,6 @@ interface CategoryChipsProps {
 }
 
 export function CategoryChips({ value, onChange, includeAll = true }: CategoryChipsProps) {
-  const theme = useTheme();
   const entries = includeAll
     ? [{ id: null as CategoryId | null, label: 'Alle', emoji: '🌀' }, ...CATEGORIES]
     : CATEGORIES;
@@ -22,31 +22,61 @@ export function CategoryChips({ value, onChange, includeAll = true }: CategoryCh
       horizontal
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={styles.content}>
-      {entries.map((category) => {
-        const selected = category.id === value;
-        return (
-          <Pressable
-            key={category.id ?? 'all'}
-            accessibilityRole="button"
-            accessibilityState={{ selected }}
-            onPress={() => onChange(category.id)}
-            style={[
-              styles.chip,
-              {
-                backgroundColor: selected ? theme.text : theme.backgroundElement,
-                borderColor: selected ? theme.text : theme.border,
-              },
-            ]}>
-            <ThemedText style={styles.emoji}>{category.emoji}</ThemedText>
-            <ThemedText
-              type="smallBold"
-              style={{ color: selected ? theme.background : theme.textSecondary }}>
-              {category.label}
-            </ThemedText>
-          </Pressable>
-        );
-      })}
+      {entries.map((category) => (
+        <Chip
+          key={category.id ?? 'all'}
+          id={category.id}
+          label={category.label}
+          emoji={category.emoji}
+          selected={category.id === value}
+          onPress={() => onChange(category.id)}
+        />
+      ))}
     </ScrollView>
+  );
+}
+
+function Chip({
+  id,
+  label,
+  emoji,
+  selected,
+  onPress,
+}: {
+  id: CategoryId | null;
+  label: string;
+  emoji: string;
+  selected: boolean;
+  onPress: () => void;
+}) {
+  const theme = useTheme();
+  const tone = useCategoryTone(id ?? 'other');
+  const strong = id === null ? theme.accent : tone.strong;
+  const soft = id === null ? theme.accentSoft : tone.soft;
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ selected }}
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.chip,
+        {
+          backgroundColor: selected ? strong : theme.backgroundElement,
+          borderColor: selected ? strong : theme.border,
+          transform: [{ scale: pressed ? 0.96 : 1 }],
+        },
+      ]}>
+      <ThemedText style={styles.emoji}>{emoji}</ThemedText>
+      <ThemedText
+        style={[
+          styles.label,
+          { color: selected ? '#FFFFFF' : theme.textSecondary },
+        ]}>
+        {label}
+      </ThemedText>
+      {!selected && <View style={[styles.dot, { backgroundColor: soft, borderColor: strong }]} />}
+    </Pressable>
   );
 }
 
@@ -60,13 +90,26 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    paddingHorizontal: 13,
+    paddingVertical: 9,
     borderRadius: Radius.pill,
     borderWidth: StyleSheet.hairlineWidth,
+    minHeight: 40,
   },
   emoji: {
     fontSize: 13,
     lineHeight: 18,
+  },
+  label: {
+    fontSize: 13,
+    lineHeight: 17,
+    fontWeight: '700',
+  },
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    borderWidth: 1,
+    marginLeft: 1,
   },
 });

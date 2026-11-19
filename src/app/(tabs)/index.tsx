@@ -4,7 +4,7 @@ import { router } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  FlatList,
+  SectionList,
   Pressable,
   RefreshControl,
   StyleSheet,
@@ -15,17 +15,25 @@ import {
 
 import { CategoryChips } from '@/components/bucket/category-chips';
 import { EmptyState } from '@/components/bucket/empty-state';
+import { HeroCard } from '@/components/bucket/hero-card';
 import { InlineError } from '@/components/bucket/inline-error';
 import { ItemCard } from '@/components/bucket/item-card';
-import { ProgressBar } from '@/components/bucket/progress-bar';
 import { ThemedText } from '@/components/themed-text';
+import { Gradient } from '@/components/ui/gradient';
 import { Screen } from '@/components/ui/screen';
-import { BottomTabInset, Radius, Spacing } from '@/constants/theme';
+import { BottomTabInset, Elevation, Radius, Spacing } from '@/constants/theme';
 import { useItems } from '@/hooks/use-bucket-data';
 import { useTheme } from '@/hooks/use-theme';
-import type { CategoryId } from '@/lib/models';
+import { countdownLabel } from '@/lib/format';
+import type { BucketItem, CategoryId, ItemStatus } from '@/lib/models';
 import { insertDemoItems, setItemStatus } from '@/lib/repository';
 import { isSupabaseConfigured } from '@/lib/supabase';
+
+const SECTION_META: { status: ItemStatus; title: string }[] = [
+  { status: 'planned', title: 'Demnächst' },
+  { status: 'idea', title: 'Ideen' },
+  { status: 'done', title: 'Erlebt' },
+];
 
 export default function BucketListScreen() {
   const theme = useTheme();
@@ -36,7 +44,6 @@ export default function BucketListScreen() {
   const [seeding, setSeeding] = useState(false);
 
   const doneCount = items.filter((item) => item.status === 'done').length;
-  const openCount = items.length - doneCount;
 
   const visibleItems = useMemo(() => {
     const needle = search.trim().toLowerCase();
@@ -52,6 +59,23 @@ export default function BucketListScreen() {
         .some((value) => value!.toLowerCase().includes(needle));
     });
   }, [items, category, search]);
+
+  const sections = useMemo(() => {
+    return SECTION_META.map((meta) => ({
+      ...meta,
+      data: visibleItems.filter((item) => item.status === meta.status),
+    })).filter((section) => section.data.length > 0);
+  }, [visibleItems]);
+
+  const nextItem = useMemo(() => {
+    const open = items.filter((item) => item.status !== 'done');
+    return (
+      open.find((item) => item.status === 'planned' && item.targetDate) ??
+      open.find((item) => item.status === 'planned') ??
+      open[0] ??
+      null
+    );
+  }, [items]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -97,63 +121,48 @@ export default function BucketListScreen() {
     }
   }, [reload]);
 
+  const openItem = useCallback((item: BucketItem) => {
+    router.push({ pathname: '/item/[id]', params: { id: item.id } });
+  }, []);
+
   const header = (
     <View style={styles.header}>
       <View style={styles.titleRow}>
         <View style={styles.titleBlock}>
-          <ThemedText style={[styles.eyebrow, { color: theme.textSecondary }]}>
-            {openCount > 0 ? `${openCount} OFFENE ZIELE` : 'DEINE LISTE'}
+          <ThemedText style={[styles.eyebrow, { color: theme.accent }]}>
+            {isSupabaseConfigured ? 'DEIN LEBEN, DEINE LISTE' : 'SUPABASE NICHT VERBUNDEN'}
           </ThemedText>
           <ThemedText style={styles.heading}>Bucket List</ThemedText>
         </View>
         <Pressable
-          onPress={surpriseMe}
+          onPress={() => router.push('/edit')}
           accessibilityRole="button"
-          accessibilityLabel="Zufälliges Ziel öffnen"
+          accessibilityLabel="Neues Ziel anlegen"
           style={({ pressed }) => [
-            styles.surpriseButton,
-            {
-              backgroundColor: theme.backgroundElement,
-              borderColor: theme.border,
-              opacity: pressed ? 0.7 : 1,
-            },
+            styles.addButton,
+            { backgroundColor: theme.backgroundElement, borderColor: theme.border, opacity: pressed ? 0.7 : 1 },
           ]}>
-          <ThemedText style={styles.surpriseIcon}>🎲</ThemedText>
+          <ThemedText style={[styles.addIcon, { color: theme.accent }]}>＋</ThemedText>
         </Pressable>
       </View>
 
-      <View style={[styles.progressCard, { backgroundColor: theme.accent }]}>
-        <View style={styles.progressTopRow}>
-          <ThemedText style={[styles.progressBig, { color: theme.accentContrast }]}>
-            {doneCount}
-            <ThemedText style={[styles.progressSmall, { color: theme.accentContrast }]}>
-              {' '}
-              von {items.length} erlebt
-            </ThemedText>
-          </ThemedText>
-          <ThemedText style={[styles.progressPercent, { color: theme.accentContrast }]}>
-            {items.length > 0 ? Math.round((doneCount / items.length) * 100) : 0}%
-          </ThemedText>
-        </View>
-        <View style={styles.progressTrack}>
-          <ProgressBar
-            value={items.length > 0 ? doneCount / items.length : 0}
-            height={7}
-            trackColor="rgba(255,255,255,0.28)"
-            color={theme.accentContrast}
-          />
-        </View>
-        <ThemedText style={[styles.progressHint, { color: theme.accentContrast }]}>
-          {isSupabaseConfigured
-            ? 'Mit Supabase synchronisiert'
-            : 'Supabase nicht konfiguriert'}
-        </ThemedText>
-      </View>
+      <HeroCard
+        done={doneCount}
+        total={items.length}
+        nextTitle={nextItem?.title ?? null}
+        nextTiming={nextItem ? countdownLabel(nextItem.targetDate) : null}
+        onShuffle={surpriseMe}
+        onOpenNext={nextItem ? () => openItem(nextItem) : undefined}
+      />
 
       <View
         style={[
           styles.searchBox,
-          { backgroundColor: theme.backgroundElement, borderColor: theme.border },
+          {
+            backgroundColor: theme.backgroundElement,
+            borderColor: theme.border,
+            shadowColor: theme.shadow,
+          },
         ]}>
         <ThemedText style={{ color: theme.textSecondary }}>🔍</ThemedText>
         <TextInput
@@ -173,17 +182,24 @@ export default function BucketListScreen() {
       </View>
 
       <CategoryChips value={category} onChange={setCategory} />
+
+      {error && (
+        <View style={styles.errorWrap}>
+          <InlineError message={error} onRetry={() => void reload()} />
+        </View>
+      )}
     </View>
   );
 
   return (
     <Screen>
-      <FlatList
-        data={visibleItems}
+      <SectionList
+        sections={sections}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
         contentInsetAdjustmentBehavior="automatic"
         showsVerticalScrollIndicator={false}
+        stickySectionHeadersEnabled={false}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -191,24 +207,28 @@ export default function BucketListScreen() {
             tintColor={theme.textSecondary}
           />
         }
-        ListHeaderComponent={
-          <>
-            {header}
-            {error && (
-              <View style={styles.errorWrap}>
-                <InlineError message={error} onRetry={() => void reload()} />
-              </View>
-            )}
-          </>
-        }
-        ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
+        ListHeaderComponent={header}
+        renderSectionHeader={({ section }) => (
+          <View style={styles.sectionHeader}>
+            <ThemedText style={[styles.sectionTitle, { color: theme.text }]}>
+              {section.title}
+            </ThemedText>
+            <View style={[styles.sectionCount, { backgroundColor: theme.backgroundSelected }]}>
+              <ThemedText style={[styles.sectionCountText, { color: theme.textSecondary }]}>
+                {section.data.length}
+              </ThemedText>
+            </View>
+          </View>
+        )}
         renderItem={({ item }) => (
           <ItemCard
             item={item}
-            onPress={() => router.push({ pathname: '/item/[id]', params: { id: item.id } })}
+            onPress={() => openItem(item)}
             onToggleDone={() => void toggleDone(item.id, item.status === 'done')}
           />
         )}
+        ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
+        SectionSeparatorComponent={() => <View style={{ height: 2 }} />}
         ListEmptyComponent={
           loading ? (
             <View style={styles.loading}>
@@ -245,13 +265,11 @@ export default function BucketListScreen() {
         accessibilityLabel="Neues Ziel anlegen"
         style={({ pressed }) => [
           styles.fab,
-          {
-            backgroundColor: theme.accent,
-            opacity: pressed ? 0.85 : 1,
-            shadowColor: theme.text,
-          },
+          { shadowColor: theme.accent, transform: [{ scale: pressed ? 0.94 : 1 }] },
+          Elevation.floating,
         ]}>
-        <ThemedText style={[styles.fabIcon, { color: theme.accentContrast }]}>＋</ThemedText>
+        <Gradient variant="sunset" style={StyleSheet.absoluteFill} />
+        <ThemedText style={styles.fabIcon}>＋</ThemedText>
       </Pressable>
     </Screen>
   );
@@ -273,23 +291,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
+    paddingBottom: 2,
   },
   titleBlock: {
-    gap: 2,
+    gap: 3,
     flex: 1,
   },
   eyebrow: {
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 1.2,
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 1.5,
   },
   heading: {
-    fontSize: 34,
-    lineHeight: 40,
+    fontSize: 36,
+    lineHeight: 41,
     fontWeight: '800',
-    letterSpacing: -0.6,
+    letterSpacing: -1,
   },
-  surpriseButton: {
+  addButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
@@ -297,42 +316,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  surpriseIcon: {
-    fontSize: 20,
+  addIcon: {
+    fontSize: 22,
     lineHeight: 26,
-  },
-  progressCard: {
-    marginHorizontal: 20,
-    padding: Spacing.three,
-    borderRadius: Radius.lg,
-    gap: 10,
-  },
-  progressTopRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-  },
-  progressBig: {
-    fontSize: 24,
-    lineHeight: 30,
-    fontWeight: '800',
-  },
-  progressSmall: {
-    fontSize: 14,
     fontWeight: '600',
-  },
-  progressPercent: {
-    fontSize: 13,
-    fontWeight: '700',
-    opacity: 0.85,
-  },
-  progressTrack: {
-    opacity: 0.95,
-  },
-  progressHint: {
-    fontSize: 11,
-    fontWeight: '600',
-    opacity: 0.8,
+    marginTop: -1,
   },
   searchBox: {
     flexDirection: 'row',
@@ -340,9 +328,13 @@ const styles = StyleSheet.create({
     gap: 8,
     marginHorizontal: 20,
     paddingHorizontal: 14,
-    height: 46,
-    borderRadius: Radius.md,
+    height: 48,
+    borderRadius: Radius.pill,
     borderWidth: StyleSheet.hairlineWidth,
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 1,
   },
   searchInput: {
     flex: 1,
@@ -350,8 +342,32 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   errorWrap: {
-    marginHorizontal: -20,
-    marginBottom: Spacing.three,
+    marginHorizontal: 0,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingTop: Spacing.two,
+    paddingBottom: Spacing.two,
+  },
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+  },
+  sectionCount: {
+    minWidth: 22,
+    height: 20,
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sectionCountText: {
+    fontSize: 11,
+    fontWeight: '800',
   },
   loading: {
     paddingVertical: Spacing.six,
@@ -361,17 +377,15 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 20,
     bottom: BottomTabInset + 20,
-    width: 58,
-    height: 58,
-    borderRadius: 29,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowOpacity: 0.22,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 6,
+    overflow: 'hidden',
   },
   fabIcon: {
+    color: '#FFFFFF',
     fontSize: 30,
     lineHeight: 34,
     fontWeight: '400',

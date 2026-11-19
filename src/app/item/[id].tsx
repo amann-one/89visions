@@ -10,7 +10,9 @@ import { PhotoStrip } from '@/components/bucket/photo-strip';
 import { ProgressBar } from '@/components/bucket/progress-bar';
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
-import { Radius, Spacing } from '@/constants/theme';
+import { Gradient } from '@/components/ui/gradient';
+import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import { useCategoryTone } from '@/hooks/use-design';
 import { useItem } from '@/hooks/use-bucket-data';
 import { useTheme } from '@/hooks/use-theme';
 import { countdownLabel, formatDate, formatEuro } from '@/lib/format';
@@ -23,6 +25,7 @@ export default function ItemDetailScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const { item, photos, loading, error, reload } = useItem(id);
+  const tone = useCategoryTone(item?.category ?? 'other');
 
   const goBack = useCallback(() => {
     if (router.canGoBack()) {
@@ -117,14 +120,27 @@ export default function ItemDetailScreen() {
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <ScrollView
+        style={styles.column}
         contentContainerStyle={{ paddingBottom: insets.bottom + Spacing.five }}
         showsVerticalScrollIndicator={false}>
         <View style={[styles.cover, { backgroundColor: theme.backgroundElement }]}>
           {cover ? (
             <Image source={{ uri: cover }} style={StyleSheet.absoluteFill} contentFit="cover" />
           ) : (
-            <ThemedText style={styles.coverEmoji}>{category.emoji}</ThemedText>
+            <Gradient variant="dusk" style={StyleSheet.absoluteFill}>
+              <View style={styles.coverFallback}>
+                <ThemedText style={styles.coverEmoji}>{category.emoji}</ThemedText>
+                <ThemedText style={styles.coverFallbackText}>{category.label}</ThemedText>
+              </View>
+            </Gradient>
           )}
+
+          <Gradient
+            colors={['rgba(10,6,14,0)', 'rgba(10,6,14,0.55)']}
+            start={{ x: 0.5, y: 0.35 }}
+            end={{ x: 0.5, y: 1 }}
+            style={styles.coverFade}
+          />
 
           <SafeAreaView edges={['top']} style={styles.coverBar} pointerEvents="box-none">
             <View style={styles.coverBarRow}>
@@ -132,7 +148,7 @@ export default function ItemDetailScreen() {
                 onPress={goBack}
                 accessibilityRole="button"
                 accessibilityLabel="Zurück"
-                style={[styles.roundButton, { backgroundColor: theme.overlay }]}>
+                style={[styles.roundButton, { backgroundColor: 'rgba(20,12,24,0.45)' }]}>
                 <ThemedText style={styles.roundButtonText}>‹</ThemedText>
               </Pressable>
               <View style={styles.coverActions}>
@@ -140,7 +156,7 @@ export default function ItemDetailScreen() {
                   onPress={() => void onToggleFavorite()}
                   accessibilityRole="button"
                   accessibilityLabel="Favorit"
-                  style={[styles.roundButton, { backgroundColor: theme.overlay }]}>
+                  style={[styles.roundButton, { backgroundColor: 'rgba(20,12,24,0.45)' }]}>
                   <ThemedText style={[styles.roundButtonText, { color: item.isFavorite ? '#FFCE4A' : '#FFFFFF' }]}>
                     {item.isFavorite ? '★' : '☆'}
                   </ThemedText>
@@ -149,7 +165,7 @@ export default function ItemDetailScreen() {
                   onPress={() => router.push({ pathname: '/edit', params: { id: item.id } })}
                   accessibilityRole="button"
                   accessibilityLabel="Bearbeiten"
-                  style={[styles.roundButton, { backgroundColor: theme.overlay }]}>
+                  style={[styles.roundButton, styles.editButton]}>
                   <ThemedText style={styles.smallRoundText}>Bearbeiten</ThemedText>
                 </Pressable>
               </View>
@@ -163,8 +179,8 @@ export default function ItemDetailScreen() {
             { backgroundColor: theme.background, borderColor: theme.border },
           ]}>
           <View style={styles.badgeRow}>
-            <View style={[styles.badge, { backgroundColor: theme.backgroundElement }]}>
-              <ThemedText type="small">
+            <View style={[styles.badge, { backgroundColor: tone.soft }]}>
+              <ThemedText type="smallBold" style={{ color: tone.strong }}>
                 {category.emoji} {category.label}
               </ThemedText>
             </View>
@@ -275,7 +291,7 @@ export default function ItemDetailScreen() {
 function InfoCell({ label, value }: { label: string; value: string }) {
   const theme = useTheme();
   return (
-    <View style={[styles.infoCell, { borderTopColor: theme.border, borderTopWidth: StyleSheet.hairlineWidth }]}>
+    <View style={[styles.infoCell, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
       <ThemedText style={[styles.infoLabel, { color: theme.textSecondary }]}>{label}</ThemedText>
       <ThemedText type="smallBold" numberOfLines={2}>
         {value}
@@ -287,6 +303,11 @@ function InfoCell({ label, value }: { label: string; value: string }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    alignItems: 'center',
+  },
+  column: {
+    width: '100%',
+    maxWidth: MaxContentWidth,
   },
   center: {
     flex: 1,
@@ -306,6 +327,26 @@ const styles = StyleSheet.create({
   coverEmoji: {
     fontSize: 88,
     lineHeight: 104,
+  },
+  coverFallback: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  coverFallbackText: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1.6,
+    textTransform: 'uppercase',
+  },
+  coverFade: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 180,
   },
   coverBar: {
     position: 'absolute',
@@ -340,14 +381,17 @@ const styles = StyleSheet.create({
     marginTop: -3,
   },
   smallRoundText: {
-    color: '#FFFFFF',
+    color: '#1B1520',
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '800',
+  },
+  editButton: {
+    backgroundColor: 'rgba(255,255,255,0.94)',
   },
   sheet: {
-    marginTop: -26,
-    borderTopLeftRadius: 26,
-    borderTopRightRadius: 26,
+    marginTop: -30,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
     borderTopWidth: StyleSheet.hairlineWidth,
     padding: Spacing.four,
     paddingTop: Spacing.four,
@@ -399,13 +443,16 @@ const styles = StyleSheet.create({
   },
   infoCell: {
     width: '47%',
-    paddingTop: 8,
-    gap: 2,
+    padding: 12,
+    borderRadius: Radius.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    gap: 3,
   },
   infoLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-    letterSpacing: 0.3,
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
   },
   budgetBlock: {
     marginTop: -Spacing.two,

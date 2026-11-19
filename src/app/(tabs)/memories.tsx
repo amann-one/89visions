@@ -6,8 +6,10 @@ import { ActivityIndicator, Pressable, SectionList, StyleSheet, View } from 'rea
 import { EmptyState } from '@/components/bucket/empty-state';
 import { InlineError } from '@/components/bucket/inline-error';
 import { ThemedText } from '@/components/themed-text';
+import { Gradient } from '@/components/ui/gradient';
 import { Screen } from '@/components/ui/screen';
-import { BottomTabInset, Radius, Spacing } from '@/constants/theme';
+import { BottomTabInset, Elevation, Radius, Spacing } from '@/constants/theme';
+import { useCategoryTone } from '@/hooks/use-design';
 import { useItems } from '@/hooks/use-bucket-data';
 import { useTheme } from '@/hooks/use-theme';
 import { formatDate, formatYear } from '@/lib/format';
@@ -39,7 +41,7 @@ export default function MemoriesScreen() {
         stickySectionHeadersEnabled={false}
         ListHeaderComponent={
           <View style={styles.header}>
-            <ThemedText style={[styles.eyebrow, { color: theme.textSecondary }]}>
+            <ThemedText style={[styles.eyebrow, { color: theme.accent }]}>
               {items.length} {items.length === 1 ? 'MOMENT' : 'MOMENTE'}
             </ThemedText>
             <ThemedText style={styles.heading}>Erinnerungen</ThemedText>
@@ -54,13 +56,21 @@ export default function MemoriesScreen() {
           </View>
         }
         renderSectionHeader={({ section }) => (
-          <ThemedText style={[styles.sectionTitle, { color: theme.textSecondary }]}>
-            {section.title}
-          </ThemedText>
+          <View style={styles.sectionHeader}>
+            <ThemedText style={[styles.sectionYear, { color: theme.text }]}>
+              {section.title}
+            </ThemedText>
+            <View style={[styles.sectionLine, { backgroundColor: theme.border }]} />
+            <View style={[styles.sectionCount, { backgroundColor: theme.backgroundSelected }]}>
+              <ThemedText style={[styles.sectionCountText, { color: theme.textSecondary }]}>
+                {section.data.length}
+              </ThemedText>
+            </View>
+          </View>
         )}
         renderItem={({ item }) => <MemoryCard item={item} />}
         ItemSeparatorComponent={() => <View style={{ height: 14 }} />}
-        SectionSeparatorComponent={() => <View style={{ height: 6 }} />}
+        SectionSeparatorComponent={() => <View style={{ height: 4 }} />}
         ListEmptyComponent={
           loading ? (
             <View style={styles.loading}>
@@ -84,23 +94,53 @@ export default function MemoriesScreen() {
 function MemoryCard({ item }: { item: BucketItem }) {
   const theme = useTheme();
   const category = getCategory(item.category);
+  const tone = useCategoryTone(item.category);
   const cover = item.coverUrl ?? item.coverThumbUrl;
 
   return (
     <Pressable
       onPress={() => router.push({ pathname: '/item/[id]', params: { id: item.id } })}
       accessibilityRole="button"
-      style={({ pressed }) => [styles.card, { opacity: pressed ? 0.88 : 1 }]}>
+      style={({ pressed }) => [
+        styles.card,
+        { shadowColor: theme.shadow, transform: [{ scale: pressed ? 0.985 : 1 }] },
+        Elevation.card,
+      ]}>
       <View style={[styles.cardImage, { backgroundColor: theme.backgroundElement }]}>
         {cover ? (
           <Image source={{ uri: cover }} style={StyleSheet.absoluteFill} contentFit="cover" />
         ) : (
-          <ThemedText style={styles.cardEmoji}>{category.emoji}</ThemedText>
+          <Gradient variant="dusk" style={StyleSheet.absoluteFill}>
+            <View style={styles.fallbackInner}>
+              <ThemedText style={styles.cardEmoji}>{category.emoji}</ThemedText>
+            </View>
+          </Gradient>
         )}
-        <View style={[styles.overlay, { backgroundColor: theme.overlay }]}>
+
+        <Gradient
+          colors={['rgba(10,6,14,0)', 'rgba(10,6,14,0.35)', 'rgba(10,6,14,0.86)']}
+          locations={[0.35, 0.62, 1]}
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 0.5, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
+
+        <View style={styles.topRow}>
+          <View style={[styles.categoryPill, { backgroundColor: 'rgba(255,255,255,0.92)' }]}>
+            <ThemedText style={[styles.categoryText, { color: tone.strong }]}>
+              {category.emoji} {category.label}
+            </ThemedText>
+          </View>
+          {item.rating ? (
+            <View style={styles.ratingPill}>
+              <ThemedText style={styles.ratingText}>{'★'.repeat(item.rating)}</ThemedText>
+            </View>
+          ) : null}
+        </View>
+
+        <View style={styles.overlay}>
           <ThemedText style={styles.overlayMeta}>
-            {category.emoji} {formatDate(item.completedAt?.slice(0, 10))}
-            {item.rating ? `  ${'★'.repeat(item.rating)}` : ''}
+            {formatDate(item.completedAt?.slice(0, 10))}
           </ThemedText>
           <ThemedText style={styles.overlayTitle} numberOfLines={2}>
             {item.title}
@@ -123,45 +163,102 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingTop: Spacing.two,
-    paddingBottom: Spacing.three,
-    gap: 4,
-    marginHorizontal: -20,
-    paddingHorizontal: 20,
+    paddingBottom: Spacing.two,
+    gap: 3,
   },
   eyebrow: {
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 1.2,
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 1.5,
   },
   heading: {
-    fontSize: 34,
-    lineHeight: 40,
+    fontSize: 36,
+    lineHeight: 41,
     fontWeight: '800',
-    letterSpacing: -0.6,
+    letterSpacing: -1,
     marginBottom: 2,
   },
-  sectionTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    letterSpacing: 0.6,
-    paddingVertical: Spacing.two,
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingTop: Spacing.two,
+    paddingBottom: Spacing.two,
+  },
+  sectionYear: {
+    fontSize: 26,
+    lineHeight: 32,
+    fontWeight: '800',
+    letterSpacing: -0.8,
+  },
+  sectionLine: {
+    flex: 1,
+    height: StyleSheet.hairlineWidth,
+  },
+  sectionCount: {
+    minWidth: 24,
+    height: 22,
+    borderRadius: 11,
+    paddingHorizontal: 7,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sectionCountText: {
+    fontSize: 11,
+    fontWeight: '800',
   },
   errorWrap: {
     marginTop: Spacing.two,
-    marginHorizontal: -20,
   },
   card: {
-    borderRadius: Radius.lg,
+    borderRadius: Radius.xl,
     overflow: 'hidden',
   },
   cardImage: {
-    height: 190,
+    height: 230,
     justifyContent: 'center',
     alignItems: 'center',
   },
+  fallbackInner: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   cardEmoji: {
-    fontSize: 60,
-    lineHeight: 72,
+    fontSize: 66,
+    lineHeight: 78,
+  },
+  topRow: {
+    position: 'absolute',
+    top: 12,
+    left: 12,
+    right: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  categoryPill: {
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: Radius.pill,
+  },
+  categoryText: {
+    fontSize: 11,
+    lineHeight: 15,
+    fontWeight: '800',
+  },
+  ratingPill: {
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: Radius.pill,
+    backgroundColor: 'rgba(255, 200, 74, 0.95)',
+  },
+  ratingText: {
+    color: '#4A3200',
+    fontSize: 11,
+    lineHeight: 15,
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
   overlay: {
     position: 'absolute',
@@ -169,25 +266,26 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     padding: Spacing.three,
-    gap: 1,
+    gap: 2,
   },
   overlayMeta: {
-    color: '#FFFFFF',
+    color: 'rgba(255,255,255,0.82)',
     fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0.4,
-    opacity: 0.85,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
   },
   overlayTitle: {
     color: '#FFFFFF',
-    fontSize: 19,
-    lineHeight: 24,
+    fontSize: 21,
+    lineHeight: 26,
     fontWeight: '800',
+    letterSpacing: -0.3,
   },
   overlayPlace: {
-    color: '#FFFFFF',
+    color: 'rgba(255,255,255,0.86)',
     fontSize: 12,
-    opacity: 0.85,
+    fontWeight: '600',
   },
   loading: {
     paddingVertical: Spacing.six,

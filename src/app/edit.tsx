@@ -20,7 +20,7 @@ import { CategoryChips } from '@/components/bucket/category-chips';
 import { PhotoStrip, type StripPhoto } from '@/components/bucket/photo-strip';
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
-import { Radius, Spacing } from '@/constants/theme';
+import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { parseGermanDate, isoDateToGermanInput } from '@/lib/format';
 import { STATUSES, type CategoryId, type ItemInput, type ItemPhoto, type ItemStatus } from '@/lib/models';
@@ -259,10 +259,11 @@ export default function EditItemScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={[styles.container, { backgroundColor: theme.background }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 12 : 0}>
+    <View style={[styles.screen, { backgroundColor: theme.background }]}>
+      <KeyboardAvoidingView
+        style={[styles.container, styles.column]}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 12 : 0}>
       <View
         style={[
           styles.header,
@@ -312,13 +313,13 @@ export default function EditItemScreen() {
                   style={[
                     styles.segmentItem,
                     {
-                      backgroundColor: selected ? theme.text : theme.backgroundElement,
-                      borderColor: selected ? theme.text : theme.border,
+                      backgroundColor: selected ? theme.accent : theme.backgroundElement,
+                      borderColor: selected ? theme.accent : theme.border,
                     },
                   ]}>
                   <ThemedText
                     type="smallBold"
-                    style={{ color: selected ? theme.background : theme.textSecondary }}>
+                    style={{ color: selected ? '#FFFFFF' : theme.textSecondary }}>
                     {entry.label}
                   </ThemedText>
                 </Pressable>
@@ -435,7 +436,10 @@ export default function EditItemScreen() {
           onPress={() => setIsFavorite((current) => !current)}
           accessibilityRole="switch"
           accessibilityState={{ checked: isFavorite }}
-          style={[styles.favoriteRow, { borderColor: theme.border }]}>
+          style={[
+            styles.favoriteRow,
+            { borderColor: theme.border, backgroundColor: theme.backgroundElement },
+          ]}>
           <View style={styles.favoriteText}>
             <ThemedText type="smallBold">Als Favorit markieren</ThemedText>
             <ThemedText type="small" themeColor="textSecondary">
@@ -472,7 +476,8 @@ export default function EditItemScreen() {
           disabled={saving}
         />
       </View>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </View>
   );
 }
 
@@ -502,8 +507,16 @@ function Field({
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    alignItems: 'center',
+  },
   container: {
     flex: 1,
+  },
+  column: {
+    width: '100%',
+    maxWidth: MaxContentWidth,
   },
   loadingScreen: {
     flex: 1,
@@ -519,8 +532,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   headerTitle: {
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: 17,
+    fontWeight: '800',
+    letterSpacing: -0.2,
   },
   content: {
     padding: 20,
@@ -539,25 +553,27 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   label: {
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0.9,
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 1.3,
     textTransform: 'uppercase',
   },
   hint: {
     fontSize: 11,
   },
   input: {
-    minHeight: 48,
-    borderRadius: Radius.md,
+    minHeight: 50,
+    borderRadius: 16,
     borderWidth: StyleSheet.hairlineWidth,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingHorizontal: 15,
+    paddingVertical: 13,
     fontSize: 16,
   },
   titleInput: {
-    fontSize: 19,
-    fontWeight: '700',
+    fontSize: 21,
+    fontWeight: '800',
+    letterSpacing: -0.3,
+    minHeight: 58,
   },
   noteInput: {
     minHeight: 110,
@@ -569,8 +585,8 @@ const styles = StyleSheet.create({
   segmentItem: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 10,
-    borderRadius: Radius.md,
+    paddingVertical: 12,
+    borderRadius: 14,
     borderWidth: StyleSheet.hairlineWidth,
   },
   stars: {
@@ -600,9 +616,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 16,
     paddingVertical: Spacing.three,
+    paddingHorizontal: Spacing.three,
   },
   favoriteText: {
     flex: 1,

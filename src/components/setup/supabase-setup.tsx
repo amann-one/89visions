@@ -1,8 +1,9 @@
-import { StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
+import { Gradient } from '@/components/ui/gradient';
 import { Screen } from '@/components/ui/screen';
-import { Radius, Spacing } from '@/constants/theme';
+import { Elevation, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { supabaseConfig } from '@/lib/supabase';
 
@@ -26,25 +27,34 @@ export function SupabaseSetup() {
 
   return (
     <Screen bottomInset>
-      <View style={styles.container}>
-        <ThemedText style={styles.emoji}>🔌</ThemedText>
-        <ThemedText style={styles.title}>Supabase verbinden</ThemedText>
-        <ThemedText style={[styles.subtitle, { color: theme.textSecondary }]}>
-          Bucket List speichert Ziele und Fotos in Supabase. Es fehlen noch die Zugangsdaten.
-        </ThemedText>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}>
+        <View style={styles.orbWrap}>
+          <Gradient variant="dusk" style={styles.orb}>
+            <ThemedText style={styles.emoji}>🔌</ThemedText>
+          </Gradient>
+        </View>
+
+        <View style={styles.titleBlock}>
+          <ThemedText style={[styles.eyebrow, { color: theme.accent }]}>EINMALIG EINRICHTEN</ThemedText>
+          <ThemedText style={styles.title}>Supabase verbinden</ThemedText>
+          <ThemedText style={[styles.subtitle, { color: theme.textSecondary }]}>
+            Bucket List speichert Ziele und Fotos in Supabase. Es fehlen noch die Zugangsdaten.
+          </ThemedText>
+        </View>
 
         <View
           style={[
             styles.card,
             { backgroundColor: theme.backgroundElement, borderColor: theme.border },
+            Elevation.card,
           ]}>
           {STEPS.map((step, index) => (
             <View key={step} style={styles.step}>
-              <View style={[styles.stepNumber, { backgroundColor: theme.accent }]}>
-                <ThemedText style={[styles.stepNumberText, { color: theme.accentContrast }]}>
-                  {index + 1}
-                </ThemedText>
-              </View>
+              <Gradient variant="sunset" style={styles.stepNumber}>
+                <ThemedText style={styles.stepNumberText}>{index + 1}</ThemedText>
+              </Gradient>
               <ThemedText style={styles.stepText}>{step}</ThemedText>
             </View>
           ))}
@@ -55,36 +65,57 @@ export function SupabaseSetup() {
             styles.codeCard,
             { backgroundColor: theme.backgroundElement, borderColor: theme.border },
           ]}>
-          <ThemedText style={[styles.codeLabel, { color: theme.textSecondary }]}>
-            .env
-          </ThemedText>
+          <View style={styles.codeHeader}>
+            <View style={[styles.codeDot, { backgroundColor: '#FF6B35' }]} />
+            <View style={[styles.codeDot, { backgroundColor: '#FFC24B' }]} />
+            <View style={[styles.codeDot, { backgroundColor: '#34D399' }]} />
+            <ThemedText style={[styles.codeLabel, { color: theme.textSecondary }]}>.env</ThemedText>
+          </View>
           <ThemedText style={styles.code}>{ENV_SNIPPET}</ThemedText>
         </View>
 
         <ThemedText style={[styles.hint, { color: theme.textSecondary }]}>
           Danach die App neu laden. Der Dev-Server liest EXPO_PUBLIC_*-Variablen nur beim Start.
         </ThemedText>
-      </View>
+      </ScrollView>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     paddingHorizontal: 24,
     paddingTop: Spacing.five,
+    paddingBottom: Spacing.five,
     gap: Spacing.three,
   },
+  orbWrap: {
+    flexDirection: 'row',
+  },
+  orb: {
+    width: 76,
+    height: 76,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   emoji: {
-    fontSize: 44,
-    lineHeight: 52,
+    fontSize: 36,
+    lineHeight: 44,
+  },
+  titleBlock: {
+    gap: 4,
+  },
+  eyebrow: {
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 1.5,
   },
   title: {
-    fontSize: 30,
-    lineHeight: 36,
+    fontSize: 32,
+    lineHeight: 38,
     fontWeight: '800',
-    letterSpacing: -0.5,
+    letterSpacing: -0.8,
   },
   subtitle: {
     fontSize: 15,
@@ -102,14 +133,15 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   stepNumber: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 1,
   },
   stepNumberText: {
+    color: '#FFFFFF',
     fontSize: 12,
     fontWeight: '800',
   },
@@ -122,12 +154,23 @@ const styles = StyleSheet.create({
     borderRadius: Radius.md,
     borderWidth: StyleSheet.hairlineWidth,
     padding: Spacing.three,
-    gap: 8,
+    gap: 10,
+  },
+  codeHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  codeDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
   codeLabel: {
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '800',
     letterSpacing: 1,
+    marginLeft: 4,
   },
   code: {
     fontSize: 12,

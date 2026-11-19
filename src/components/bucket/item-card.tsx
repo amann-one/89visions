@@ -2,7 +2,9 @@ import { Image } from 'expo-image';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { Radius, Spacing } from '@/constants/theme';
+import { Gradient } from '@/components/ui/gradient';
+import { Elevation, Radius } from '@/constants/theme';
+import { useCategoryTone } from '@/hooks/use-design';
 import { useTheme } from '@/hooks/use-theme';
 import { countdownLabel, formatDate } from '@/lib/format';
 import { getCategory, type BucketItem } from '@/lib/models';
@@ -13,16 +15,28 @@ interface ItemCardProps {
   onToggleDone: () => void;
 }
 
+const STATUS_LABEL: Record<BucketItem['status'], string> = {
+  idea: 'Idee',
+  planned: 'Geplant',
+  done: 'Erlebt',
+};
+
 export function ItemCard({ item, onPress, onToggleDone }: ItemCardProps) {
   const theme = useTheme();
   const category = getCategory(item.category);
+  const tone = useCategoryTone(item.category);
   const cover = item.coverThumbUrl ?? item.coverUrl;
   const isDone = item.status === 'done';
   const timing = isDone
     ? item.completedAt
-      ? `Erlebt am ${formatDate(item.completedAt.slice(0, 10))}`
-      : 'Erlebt'
+      ? formatDate(item.completedAt.slice(0, 10))
+      : null
     : countdownLabel(item.targetDate);
+
+  const statusColor =
+    item.status === 'done' ? theme.success : item.status === 'planned' ? theme.accent : theme.textSecondary;
+  const statusSoft =
+    item.status === 'done' ? theme.successSoft : item.status === 'planned' ? theme.accentSoft : theme.backgroundSelected;
 
   return (
     <Pressable
@@ -34,18 +48,25 @@ export function ItemCard({ item, onPress, onToggleDone }: ItemCardProps) {
         {
           backgroundColor: theme.backgroundElement,
           borderColor: theme.border,
-          opacity: pressed ? 0.82 : 1,
+          shadowColor: theme.shadow,
+          transform: [{ scale: pressed ? 0.985 : 1 }],
+          opacity: pressed ? 0.94 : 1,
         },
+        Elevation.card,
       ]}>
-      <View style={[styles.cover, { backgroundColor: theme.backgroundSelected }]}>
+      <View style={styles.coverWrap}>
         {cover ? (
-          <Image source={{ uri: cover }} style={StyleSheet.absoluteFill} contentFit="cover" />
+          <Image source={{ uri: cover }} style={styles.coverImage} contentFit="cover" />
         ) : (
-          <ThemedText style={styles.coverEmoji}>{category.emoji}</ThemedText>
+          <Gradient
+            colors={[tone.soft, tone.soft]}
+            style={[styles.coverFallback, { borderColor: tone.soft }]}>
+            <ThemedText style={styles.coverEmoji}>{category.emoji}</ThemedText>
+          </Gradient>
         )}
         {item.photoCount > 1 && (
           <View style={[styles.photoCount, { backgroundColor: theme.overlay }]}>
-            <ThemedText style={styles.photoCountText}>{item.photoCount}</ThemedText>
+            <ThemedText style={styles.photoCountText}>◍ {item.photoCount}</ThemedText>
           </View>
         )}
       </View>
@@ -57,65 +78,60 @@ export function ItemCard({ item, onPress, onToggleDone }: ItemCardProps) {
           </ThemedText>
           <Pressable
             onPress={onToggleDone}
-            hitSlop={10}
+            hitSlop={12}
             accessibilityRole="checkbox"
             accessibilityState={{ checked: isDone }}
             accessibilityLabel={isDone ? 'Als offen markieren' : 'Als erledigt markieren'}
             style={[
               styles.check,
               {
-                borderColor: isDone ? theme.success : theme.border,
+                borderColor: isDone ? 'transparent' : theme.border,
                 backgroundColor: isDone ? theme.success : 'transparent',
               },
             ]}>
-            <ThemedText
-              style={[styles.checkMark, { color: isDone ? theme.background : theme.textSecondary }]}>
+            <ThemedText style={[styles.checkMark, { color: isDone ? '#FFFFFF' : theme.border }]}>
               ✓
             </ThemedText>
           </Pressable>
         </View>
 
-        <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-          {category.emoji} {category.label}
-          {item.placeName ? ` · ${item.placeName}` : ''}
-        </ThemedText>
+        <View style={styles.categoryRow}>
+          <View style={[styles.categoryPill, { backgroundColor: tone.soft }]}>
+            <ThemedText style={[styles.categoryText, { color: tone.strong }]}>
+              {category.emoji} {category.label}
+            </ThemedText>
+          </View>
+          {item.placeName ? (
+            <ThemedText type="small" themeColor="textSecondary" numberOfLines={1} style={styles.place}>
+              {item.placeName}
+            </ThemedText>
+          ) : null}
+        </View>
 
         <View style={styles.metaRow}>
-          <View
-            style={[
-              styles.statusPill,
-              {
-                backgroundColor:
-                  item.status === 'done'
-                    ? theme.successSoft
-                    : item.status === 'planned'
-                      ? theme.accentSoft
-                      : theme.backgroundSelected,
-              },
-            ]}>
-            <ThemedText
-              style={[
-                styles.statusText,
-                {
-                  color:
-                    item.status === 'done'
-                      ? theme.success
-                      : item.status === 'planned'
-                        ? theme.accent
-                        : theme.textSecondary,
-                },
-              ]}>
-              {item.status === 'done' ? 'Erledigt' : item.status === 'planned' ? 'Geplant' : 'Idee'}
+          <View style={[styles.statusPill, { backgroundColor: statusSoft }]}>
+            <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
+            <ThemedText style={[styles.statusText, { color: statusColor }]}>
+              {STATUS_LABEL[item.status]}
             </ThemedText>
           </View>
 
-          {timing && (
-            <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+          {timing ? (
+            <ThemedText
+              type="small"
+              numberOfLines={1}
+              style={{ color: isDone ? theme.textSecondary : theme.accent, fontWeight: '700' }}>
               {timing}
             </ThemedText>
-          )}
+          ) : null}
 
-          {item.isFavorite && <ThemedText style={styles.favorite}>★</ThemedText>}
+          <View style={styles.spacer} />
+
+          {item.isFavorite && (
+            <View style={[styles.favoritePill, { backgroundColor: theme.backgroundSelected }]}>
+              <ThemedText style={[styles.favorite, { color: theme.highlight }]}>★</ThemedText>
+            </View>
+          )}
         </View>
       </View>
     </Pressable>
@@ -125,41 +141,49 @@ export function ItemCard({ item, onPress, onToggleDone }: ItemCardProps) {
 const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
-    gap: Spacing.three,
+    gap: 12,
     padding: 10,
     borderRadius: Radius.lg,
     borderWidth: StyleSheet.hairlineWidth,
   },
-  cover: {
-    width: 88,
-    height: 88,
+  coverWrap: {
+    width: 92,
+    height: 92,
     borderRadius: Radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
     overflow: 'hidden',
   },
+  coverImage: {
+    width: '100%',
+    height: '100%',
+  },
+  coverFallback: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   coverEmoji: {
-    fontSize: 34,
-    lineHeight: 42,
+    fontSize: 36,
+    lineHeight: 44,
   },
   photoCount: {
     position: 'absolute',
-    right: 6,
-    bottom: 6,
-    paddingHorizontal: 6,
-    paddingVertical: 1,
+    right: 5,
+    bottom: 5,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
     borderRadius: Radius.pill,
   },
   photoCountText: {
     color: '#FFFFFF',
-    fontSize: 11,
-    fontWeight: '700',
+    fontSize: 10,
+    lineHeight: 14,
+    fontWeight: '800',
   },
   content: {
     flex: 1,
     justifyContent: 'space-between',
     paddingVertical: 2,
-    gap: 4,
+    gap: 6,
   },
   titleRow: {
     flexDirection: 'row',
@@ -170,20 +194,41 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     lineHeight: 21,
-    fontWeight: '700',
+    fontWeight: '800',
+    letterSpacing: -0.2,
   },
   check: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    borderWidth: 1.5,
+    width: 27,
+    height: 27,
+    borderRadius: 14,
+    borderWidth: 1.8,
     alignItems: 'center',
     justifyContent: 'center',
   },
   checkMark: {
-    fontSize: 15,
-    lineHeight: 18,
+    fontSize: 14,
+    lineHeight: 17,
     fontWeight: '800',
+  },
+  categoryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  categoryPill: {
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: Radius.pill,
+  },
+  categoryText: {
+    fontSize: 11,
+    lineHeight: 15,
+    fontWeight: '800',
+  },
+  place: {
+    flex: 1,
+    fontSize: 12,
+    lineHeight: 16,
   },
   metaRow: {
     flexDirection: 'row',
@@ -191,17 +236,36 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   statusPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
     paddingHorizontal: 8,
-    paddingVertical: 2,
+    paddingVertical: 3,
     borderRadius: Radius.pill,
   },
+  statusDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 3,
+  },
   statusText: {
-    fontSize: 11,
-    lineHeight: 16,
-    fontWeight: '700',
+    fontSize: 10,
+    lineHeight: 14,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+  },
+  spacer: {
+    flex: 1,
+  },
+  favoritePill: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   favorite: {
-    fontSize: 13,
-    color: '#E0A100',
+    fontSize: 12,
+    lineHeight: 15,
   },
 });
