@@ -2,7 +2,7 @@ import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { InlineError } from '@/components/bucket/inline-error';
@@ -17,6 +17,7 @@ import { useItem } from '@/hooks/use-bucket-data';
 import { useTheme } from '@/hooks/use-theme';
 import { countdownLabel, formatDate, formatEuro } from '@/lib/format';
 import { getCategory, getStatus } from '@/lib/models';
+import { Alert } from '@/lib/alert';
 import { deleteStoragePhoto } from '@/lib/storage';
 import { setItemStatus, softDeleteItem, toggleFavorite } from '@/lib/repository';
 

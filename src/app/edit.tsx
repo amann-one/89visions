@@ -4,7 +4,6 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -32,6 +31,7 @@ import {
   fetchPhotos,
   updateItem,
 } from '@/lib/repository';
+import { Alert } from '@/lib/alert';
 import { deleteStoragePhoto, uploadItemPhoto } from '@/lib/storage';
 
 export default function EditItemScreen() {

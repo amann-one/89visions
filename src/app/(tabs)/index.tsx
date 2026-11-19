@@ -11,7 +11,6 @@ import {
   StyleSheet,
   TextInput,
   View,
-  Alert,
 } from 'react-native';
 
 import { CategoryChips } from '@/components/bucket/category-chips';
@@ -30,6 +29,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { countdownLabel } from '@/lib/format';
 import type { BucketItem, CategoryId, ItemStatus } from '@/lib/models';
 import { insertDemoItems, setItemStatus } from '@/lib/repository';
+import { Alert } from '@/lib/alert';
 import { isSupabaseConfigured } from '@/lib/supabase';
 
 const SECTION_META: { status: ItemStatus; title: string }[] = [
