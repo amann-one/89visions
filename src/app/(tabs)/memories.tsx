@@ -5,6 +5,7 @@ import { ActivityIndicator, Pressable, SectionList, StyleSheet, View } from 'rea
 
 import { EmptyState } from '@/components/bucket/empty-state';
 import { InlineError } from '@/components/bucket/inline-error';
+import { PoweredBy } from '@/components/powered-by';
 import { ThemedText } from '@/components/themed-text';
 import { Gradient } from '@/components/ui/gradient';
 import { Screen } from '@/components/ui/screen';
@@ -71,6 +72,7 @@ export default function MemoriesScreen() {
         renderItem={({ item }) => <MemoryCard item={item} />}
         ItemSeparatorComponent={() => <View style={{ height: 14 }} />}
         SectionSeparatorComponent={() => <View style={{ height: 4 }} />}
+        ListFooterComponent={<PoweredBy />}
         ListEmptyComponent={
           loading ? (
             <View style={styles.loading}>

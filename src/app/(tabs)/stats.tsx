@@ -3,6 +3,7 @@ import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 
 import { EmptyState } from '@/components/bucket/empty-state';
 import { InlineError } from '@/components/bucket/inline-error';
+import { PoweredBy } from '@/components/powered-by';
 import { ThemedText } from '@/components/themed-text';
 import { Gradient } from '@/components/ui/gradient';
 import { Screen } from '@/components/ui/screen';
@@ -178,6 +179,7 @@ export default function StatsScreen() {
           <ThemedText type="small" themeColor="textSecondary">
             Weiter so – jedes Ziel zählt. ✨
           </ThemedText>
+          <PoweredBy />
         </View>
       </ScrollView>
     </Screen>

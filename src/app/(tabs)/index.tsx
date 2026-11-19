@@ -20,6 +20,7 @@ import { HeroCard } from '@/components/bucket/hero-card';
 import { InlineError } from '@/components/bucket/inline-error';
 import { ItemCard } from '@/components/bucket/item-card';
 import { ThemedText } from '@/components/themed-text';
+import { PoweredBy } from '@/components/powered-by';
 import { Gradient } from '@/components/ui/gradient';
 import { Screen } from '@/components/ui/screen';
 import { BottomTabInset, Elevation, Radius, Spacing } from '@/constants/theme';
@@ -215,6 +216,7 @@ export default function BucketListScreen() {
           />
         }
         ListHeaderComponent={header}
+        ListFooterComponent={<PoweredBy />}
         renderSectionHeader={({ section }) => (
           <View style={styles.sectionHeader}>
             <ThemedText style={[styles.sectionTitle, { color: theme.text }]}>
