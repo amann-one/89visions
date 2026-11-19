@@ -19,7 +19,7 @@ export default function StatsScreen() {
 
   if (loading) {
     return (
-      <Screen>
+      <Screen belowTabBar>
         <View style={styles.center}>
           <ActivityIndicator color={theme.accent} />
         </View>
@@ -29,7 +29,7 @@ export default function StatsScreen() {
 
   if (!stats || stats.total === 0) {
     return (
-      <Screen>
+      <Screen belowTabBar>
         <ScrollView contentContainerStyle={styles.content}>
           <ThemedText style={[styles.eyebrow, { color: theme.accent }]}>DEIN FORTSCHRITT</ThemedText>
           <ThemedText style={styles.heading}>Statistik</ThemedText>
@@ -54,7 +54,7 @@ export default function StatsScreen() {
   const maxYear = Math.max(...stats.byYear.map((entry) => entry.done), 1);
 
   return (
-    <Screen>
+    <Screen belowTabBar>
       <ScrollView
         contentContainerStyle={styles.content}
         contentInsetAdjustmentBehavior="automatic"

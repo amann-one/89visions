@@ -192,7 +192,7 @@ export default function BucketListScreen() {
   );
 
   return (
-    <Screen>
+    <Screen belowTabBar>
       <SectionList
         sections={sections}
         keyExtractor={(item) => item.id}

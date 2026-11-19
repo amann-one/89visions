@@ -10,17 +10,29 @@ interface ScreenProps {
   style?: ViewStyle;
   /** Use `bottom` for screens that are not inside the native tab bar. */
   bottomInset?: boolean;
+  /**
+   * Tab screens on the web render the tab bar as a floating pill at the top of
+   * the window, so the content needs to start below it.
+   */
+  belowTabBar?: boolean;
 }
 
-export function Screen({ children, style, bottomInset = false }: ScreenProps) {
+export function Screen({
+  children,
+  style,
+  bottomInset = false,
+  belowTabBar = false,
+}: ScreenProps) {
   const theme = useTheme();
+  const webTabBarOffset = belowTabBar && Platform.OS === 'web' ? { paddingTop: 68 } : null;
+
   return (
     <SafeAreaView
       edges={bottomInset ? ['top', 'bottom'] : ['top']}
       style={[styles.screen, { backgroundColor: theme.background }, style]}>
       {/* On tablets and the web the app keeps a phone-like column instead of
           stretching cards across the whole viewport. */}
-      <View style={styles.column}>{children}</View>
+      <View style={[styles.column, webTabBarOffset]}>{children}</View>
     </SafeAreaView>
   );
 }

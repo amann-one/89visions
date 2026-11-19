@@ -31,7 +31,7 @@ export default function MemoriesScreen() {
   }, [items]);
 
   return (
-    <Screen>
+    <Screen belowTabBar>
       <SectionList
         sections={sections}
         keyExtractor={(item) => item.id}
