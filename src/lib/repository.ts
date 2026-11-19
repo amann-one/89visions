@@ -300,6 +300,23 @@ export async function addPhoto(photo: ItemPhoto): Promise<void> {
   }
 }
 
+/** Photos are ordered by created_at, so a new order is stored as ascending timestamps. */
+export async function setPhotoOrder(photoIds: string[]): Promise<void> {
+  const base = Date.now() - photoIds.length * 1000;
+  const results = await Promise.all(
+    photoIds.map((id, index) =>
+      supabase
+        .from('photos')
+        .update({ created_at: new Date(base + index * 1000).toISOString() })
+        .eq('id', id)
+    )
+  );
+  const failed = results.find((result) => result.error);
+  if (failed?.error) {
+    fail(failed.error);
+  }
+}
+
 export async function deletePhoto(photoId: string): Promise<void> {
   const { error } = await supabase.from('photos').delete().eq('id', photoId);
   if (error) {

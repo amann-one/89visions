@@ -29,6 +29,7 @@ import {
   deletePhoto,
   fetchItem,
   fetchPhotos,
+  setPhotoOrder,
   updateItem,
 } from '@/lib/repository';
 import { Alert } from '@/lib/alert';
@@ -57,6 +58,7 @@ export default function EditItemScreen() {
   const [existingPhotos, setExistingPhotos] = useState<ItemPhoto[]>([]);
   const [newPhotos, setNewPhotos] = useState<StripPhoto[]>([]);
   const [removedPhotoIds, setRemovedPhotoIds] = useState<string[]>([]);
+  const [photoOrder, setPhotoOrderIds] = useState<string[]>([]);
 
   useEffect(() => {
     if (!id) {
@@ -102,13 +104,25 @@ export default function EditItemScreen() {
     [existingPhotos, removedPhotoIds]
   );
 
-  const stripPhotos: StripPhoto[] = useMemo(
-    () => [
+  const stripPhotos: StripPhoto[] = useMemo(() => {
+    const all = [
       ...visibleExisting.map((photo) => ({ id: photo.id, uri: photo.thumbUrl })),
       ...newPhotos,
-    ],
-    [visibleExisting, newPhotos]
-  );
+    ];
+    const rank = (photoId: string) => {
+      const position = photoOrder.indexOf(photoId);
+      return position === -1 ? Number.MAX_SAFE_INTEGER : position;
+    };
+    // Array.sort is stable, so photos without an explicit position keep their order.
+    return [...all].sort((a, b) => rank(a.id) - rank(b.id));
+  }, [visibleExisting, newPhotos, photoOrder]);
+
+  const reorderPhotos = (from: number, to: number) => {
+    const ids = stripPhotos.map((photo) => photo.id);
+    const [moved] = ids.splice(from, 1);
+    ids.splice(to, 0, moved);
+    setPhotoOrderIds(ids);
+  };
 
   const parsedDate = dateText.trim() ? parseGermanDate(dateText) : null;
   const dateInvalid = dateText.trim().length > 0 && parsedDate === null;
@@ -205,11 +219,14 @@ export default function EditItemScreen() {
         await createItem(targetId, input);
       }
 
+      const savedIds = new Map<string, string>();
       for (let index = 0; index < newPhotos.length; index += 1) {
         setUploadLabel(`Foto ${index + 1} von ${newPhotos.length} wird hochgeladen…`);
         const uploaded = await uploadItemPhoto(newPhotos[index].uri, targetId);
+        const savedId = randomUUID();
+        savedIds.set(newPhotos[index].id, savedId);
         await addPhoto({
-          id: randomUUID(),
+          id: savedId,
           itemId: targetId,
           url: uploaded.url,
           thumbUrl: uploaded.thumbUrl,
@@ -224,6 +241,10 @@ export default function EditItemScreen() {
       for (const photo of removed) {
         await deletePhoto(photo.id);
         await deleteStoragePhoto(photo.storagePath);
+      }
+
+      if (stripPhotos.length > 1) {
+        await setPhotoOrder(stripPhotos.map((photo) => savedIds.get(photo.id) ?? photo.id));
       }
 
       router.back();
@@ -419,6 +440,7 @@ export default function EditItemScreen() {
             photos={stripPhotos}
             onAdd={() => void pickFromLibrary()}
             onRemove={removePhoto}
+            onReorder={reorderPhotos}
           />
           <View style={styles.photoActions}>
             <Pressable onPress={() => void takePhoto()} style={styles.photoAction}>
