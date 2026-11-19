@@ -1,5 +1,6 @@
 import { randomUUID } from 'expo-crypto';
 import * as Haptics from 'expo-haptics';
+import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import {
@@ -128,6 +129,12 @@ export default function BucketListScreen() {
   const header = (
     <View style={styles.header}>
       <View style={styles.titleRow}>
+        <Image
+          source={require('@/assets/images/brand/visions-logo.png')}
+          style={styles.logo}
+          contentFit="contain"
+          accessibilityLabel="Visions Logo"
+        />
         <View style={styles.titleBlock}>
           <ThemedText style={[styles.eyebrow, { color: theme.accent }]}>
             {isSupabaseConfigured ? 'DEIN LEBEN, DEINE LISTE' : 'SUPABASE NICHT VERBUNDEN'}
@@ -292,6 +299,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingBottom: 2,
+  },
+  logo: {
+    width: 44,
+    height: 44,
+    marginRight: Spacing.three,
   },
   titleBlock: {
     gap: 3,
